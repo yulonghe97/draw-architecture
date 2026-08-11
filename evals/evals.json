@@ -1,0 +1,43 @@
+{
+  "skill_name": "architecture-canvas",
+  "evals": [
+    {
+      "id": 0,
+      "name": "saas-platform-from-description",
+      "prompt": "Create an interactive architecture canvas for our e-commerce platform Shoply \u2014 a single self-contained HTML file I can pan/zoom and click around to explore, dark theme. Here's the architecture:\n\nPeople: shoppers (web + mobile), merchants (dashboard), and support agents. Product surfaces (ours, Next.js): the Storefront, the Merchant Dashboard, and an Admin Console. Core domain services we own: the Catalog service (products, variants, inventory pointers), the Order Orchestrator (saga-based checkout: cart \u2192 payment \u2192 fulfillment), and the Pricing Engine (promotions, tax, currency). Platform abstractions we own over swappable vendors: PaymentGateway (wraps Stripe and Adyen \u2014 card data never touches our services), SearchService (wraps Algolia \u2014 indexes the catalog), and Notifier (wraps SendGrid + Twilio for email/SMS). Infra everything runs on: Kubernetes for the services, Postgres for orders + catalog, Kafka as the event bus (order events fan out to search indexing, notifications, and analytics), Redis for carts and sessions. Key flows: shoppers hit the storefront which talks to catalog/pricing/orders; the orchestrator calls PaymentGateway; every order state change lands on Kafka; the analytics pipeline feeds a sales dashboard the merchants see \u2014 that's our feedback loop.\n\nSave it to {OUTDIR}/shoply-canvas/index.html. Don't publish anywhere \u2014 local file only.",
+      "expected_output": "A self-contained interactive canvas HTML in the established style: layered bands (humans / product / domain / platform / infra), dashed-vs-solid ownership semantics, orthogonal labeled edges including the Kafka fan-out and analytics feedback loop, pan/zoom + click-to-isolate + readout.",
+      "files": [],
+      "assertions": [
+        "index.html exists at the requested path and is fully self-contained (no references to local files; only network assets like Google Fonts allowed)",
+        "The inline JavaScript is syntactically valid (the page can execute without parse errors)",
+        "Interactive pan and zoom: the page wires pointer-drag panning and wheel/pinch zooming",
+        "Click-to-inspect: clicking (or hovering) a component reveals a name + description readout for that component",
+        "Dark theme: page background is a dark color",
+        "Layered-band composition: the diagram groups components into horizontal layer zones (bands/planes), not a free-form node graph",
+        "Ownership semantics encoded in line style: owned/in-house abstractions rendered with dashed borders, vendor/swappable infra with solid borders",
+        "All core components appear: Storefront, Merchant Dashboard, Catalog, Order Orchestrator, Pricing Engine, PaymentGateway, SearchService, Notifier, Kafka, Postgres, Redis, Kubernetes",
+        "The analytics \u2192 merchant/sales-dashboard feedback loop is drawn as an explicit edge (not just mentioned in text)",
+        "Kafka fan-out is visible: order events flow to at least search indexing and notifications"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "ml-pipeline-from-description",
+      "prompt": "we're presenting our ML platform 'meridian' to the new platform team next week. can you build an interactive architecture diagram i can explore (pan/zoom, click things for details)? dark mode please. here's how it works: raw events land in S3 via Kinesis Firehose, and batch dumps arrive nightly from the warehouse (Snowflake). our Ingestion Gateway (ours) validates + normalizes everything into the lake. the Feature Store is our own abstraction on top of Redis (online) and S3/parquet (offline). training: Airflow schedules jobs, our Training Orchestrator (ours) runs them on EKS GPU nodes, artifacts + lineage go to MLflow. the Model Registry wrapper (ours) gates promotion \u2014 a model can't ship without passing our Eval Harness (ours, runs golden datasets). serving: our Inference Gateway (ours) fronts Triton servers on EKS, does canary routing + feature lookup. monitoring: predictions + outcomes stream back through Kinesis into the Drift Monitor (ours) which can trigger retraining via Airflow \u2014 that closed loop is the whole point of the platform. save to {OUTDIR}/meridian-canvas/index.html. no need to publish it anywhere.",
+      "expected_output": "An explorable canvas showing the ML lifecycle as layered planes (sources \u2192 ingestion \u2192 features/training \u2192 registry/eval gate \u2192 serving \u2192 monitoring) with the drift-monitor retraining feedback loop routed as a long gutter edge, owned abstractions dashed vs AWS/vendor infra solid.",
+      "files": [],
+      "assertions": [
+        "index.html exists at the requested path and is fully self-contained (no references to local files; only network assets like Google Fonts allowed)",
+        "The inline JavaScript is syntactically valid (the page can execute without parse errors)",
+        "Interactive pan and zoom: the page wires pointer-drag panning and wheel/pinch zooming",
+        "Click-to-inspect: clicking (or hovering) a component reveals a name + description readout for that component",
+        "Dark theme: page background is a dark color",
+        "Layered-band composition: the diagram groups components into horizontal layer zones (bands/planes), not a free-form node graph",
+        "Ownership semantics encoded in line style: owned/in-house abstractions rendered with dashed borders, vendor/swappable infra with solid borders",
+        "All owned components appear and are distinguishable from vendor infra: Ingestion Gateway, Feature Store, Training Orchestrator, Model Registry, Eval Harness, Inference Gateway, Drift Monitor vs S3, Kinesis, Snowflake, Airflow, EKS, MLflow, Redis, Triton",
+        "The closed retraining loop is drawn: monitoring/Drift Monitor routes back to Airflow/training as an explicit edge",
+        "The eval gate is in the promotion path: Eval Harness sits between training artifacts and serving/registry promotion"
+      ]
+    }
+  ]
+}

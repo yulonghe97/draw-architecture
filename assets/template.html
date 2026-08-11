@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E1217;
+    --chrome: rgba(18, 23, 30, 0.82);
+    --chrome-border: #242C38;
+    --ink: #E7EAEE;
+    --ink-mut: #9AA4B2;
+    --ink-dim: #6E7A88;
+    --accent: #7DD3FC;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  #stage { position: fixed; inset: 0; }
+  #c { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+  #c.panning { cursor: grabbing; }
+  #c.pointing { cursor: pointer; }
+
+  /* ---- floating chrome ---- */
+  .bar {
+    position: fixed; z-index: 10;
+    display: flex; align-items: center; gap: 2px;
+    padding: 5px;
+    background: var(--chrome);
+    border: 1px solid var(--chrome-border);
+    border-radius: 11px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+  }
+  #toolbar { bottom: 18px; left: 50%; transform: translateX(-50%); }
+  button {
+    appearance: none; border: 0; background: transparent;
+    color: var(--ink-mut);
+    font: inherit; font-size: 11px; font-weight: 500;
+    height: 28px; min-width: 28px; padding: 0 9px;
+    border-radius: 7px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  button:hover { background: rgba(125,211,252,0.10); color: var(--ink); }
+  button:active { background: rgba(125,211,252,0.18); }
+  button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .sep { width: 1px; height: 17px; background: var(--chrome-border); margin: 0 4px; flex: none; }
+  #zoomLabel {
+    font-size: 10.5px; color: var(--ink-dim); min-width: 46px;
+    text-align: center; font-variant-numeric: tabular-nums; user-select: none;
+  }
+
+  /* ---- title plate ---- */
+  #plate {
+    position: fixed; top: 16px; left: 18px; z-index: 10;
+    pointer-events: none; user-select: none;
+  }
+  #plate .k { font-size: 9.5px; letter-spacing: 2.2px; color: var(--accent); opacity: 0.75; font-weight: 700; }
+  #plate .n { font-size: 12px; color: var(--ink-dim); margin-top: 5px; }
+  #plate .n b { color: var(--ink-mut); font-weight: 500; }
+  #plate { transition: opacity 220ms ease; }
+  #plate.hidden { opacity: 0; }
+
+  /* ---- hint ---- */
+  #hint {
+    position: fixed; top: 18px; right: 18px; z-index: 10;
+    font-size: 10.5px; color: var(--ink-dim); text-align: right;
+    line-height: 1.75; pointer-events: none; user-select: none;
+    transition: opacity 400ms ease;
+  }
+  #hint kbd {
+    font: inherit; font-size: 10px; color: var(--ink-mut);
+    border: 1px solid var(--chrome-border); border-radius: 4px;
+    padding: 1px 4px; background: rgba(255,255,255,0.03);
+  }
+  #hint.faded { opacity: 0.28; }
+
+  /* ---- focus readout ---- */
+  #readout {
+    position: fixed; bottom: 18px; left: 18px; z-index: 10;
+    max-width: 320px; padding: 10px 13px;
+    background: var(--chrome); border: 1px solid var(--chrome-border);
+    border-radius: 11px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+  #readout.on { opacity: 1; transform: translateY(0); }
+  #readout .p {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1.8px;
+    text-transform: uppercase; color: var(--plane, #94A3B8);
+  }
+  #readout .p i { width: 7px; height: 7px; border-radius: 2px; background: currentColor; flex: none; }
+  #readout .t { font-size: 12px; font-weight: 600; color: var(--ink); }
+  #readout .d { font-size: 10.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.6; }
+  #readout .d em { font-style: normal; color: var(--ink-mut); }
+
+  @media (max-width: 720px) {
+    #hint { display: none; }
+    #plate .n { display: none; }
+    #readout { max-width: calc(100vw - 36px); bottom: 60px; }
+    #toolbar { bottom: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage"><canvas id="c"></canvas></div>
+
+<div id="plate">
+  <div class="k">{{KICKER}}</div>
+  <div class="n">{{SUB_HTML}}</div>
+</div>
+
+<div id="hint">
+  <div><kbd>drag</kbd> pan &nbsp;·&nbsp; <kbd>scroll</kbd> zoom</div>
+  <div><kbd>click</kbd> isolate &nbsp;·&nbsp; <kbd>0</kbd> fit &nbsp;·&nbsp; <kbd>esc</kbd> clear</div>
+</div>
+
+<div id="readout">
+  <div class="p"><i></i><span></span></div>
+  <div class="t"></div>
+  <div class="d"></div>
+</div>
+
+<div class="bar" id="toolbar">
+  <button id="bOut" title="Zoom out (−)" aria-label="Zoom out">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6M8 11h6"/></svg>
+  </button>
+  <div id="zoomLabel">100%</div>
+  <button id="bIn" title="Zoom in (+)" aria-label="Zoom in">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6M8 11h6M11 8v6"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button id="bFit" title="Fit to screen (0)">Fit</button>
+  <button id="bOne" title="Actual size (1)">1:1</button>
+  <div class="sep"></div>
+  <button id="bPng" title="Download PNG @2×">
+    <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+  </button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ==========================================================================
+  // FIXED VISUAL LANGUAGE — palette and text styles shared by every diagram
+  // produced with this template. Scene data below references C.* freely.
+  // ==========================================================================
+
+  const C = {
+    bg:        '#0E1217',
+    boxFill:   '#161B23',
+    boxStroke: '#2A3240',
+    bandFill:  'rgba(255,255,255,0.02)',
+    line:      '#8B93A1',
+    sky:       '#7DD3FC',
+    rose:      '#FB7185',
+    orange:    '#F6821F',
+    slate:     '#94A3B8',
+    ink:       '#E7EAEE',
+    mut:       '#9AA4B2',
+    dim:       '#6E7A88',
+    plane:     '#5B6673',
+    arrowLbl:  '#98A2B0'
+  };
+
+  // Text styles, mirroring the <style> block in the SVG.
+  const S = {
+    title:  { size: 28,   weight: 700, fill: C.ink },
+    sub:    { size: 14,   weight: 400, fill: C.mut },
+    tag:    { size: 13,   weight: 400, fill: C.dim },
+    hdr:    { size: 11,   weight: 700, ls: 2.5 },
+    tagr:   { size: 10,   weight: 400, ls: 2 },
+    plane:  { size: 9.5,  weight: 700, ls: 2, fill: C.plane },
+    bl:     { size: 13.5, weight: 600, fill: C.ink },
+    bs:     { size: 11,   weight: 400, fill: C.mut },
+    bn:     { size: 10.5, weight: 400, fill: C.dim, italic: true },
+    al:     { size: 10.5, weight: 400, fill: C.arrowLbl },
+    legend: { size: 11,   weight: 400, fill: C.mut }
+  };
+
+  function planeColor(id) { return (PLANES[id] || { c: C.slate }).c; }
+
+  // ======================== SCENE START (generated) =========================
+{{SCENE}}
+  // ========================= SCENE END ======================================
+
+  // Index for fast lookup.
+  const BOX_BY_ID = new Map(BOXES.map(b => [b.id, b]));
+
+  // ==========================================================================
+  // VIEW STATE
+  // ==========================================================================
+
+  const canvas = document.getElementById('c');
+  // `ctx` is reassigned (not just mutated) during PNG export so the whole
+  // render path can be reused against an offscreen surface — hence `let`.
+  let ctx = canvas.getContext('2d');
+  const readout = document.getElementById('readout');
+  const zoomLabel = document.getElementById('zoomLabel');
+  const hint = document.getElementById('hint');
+  const plate = document.getElementById('plate');
+
+  const view = { k: 1, x: 0, y: 0 };   // world → screen: p * k + (x, y)
+  let vw = 0, vh = 0, dpr = 1;
+  let hovered = null;                  // box id under the cursor
+  let focused = null;                  // box id locked by a click
+  let raf = 0;
+
+  const MIN_K = 0.12, MAX_K = 4;
+
+  function schedule() {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; draw(); });
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    vw = canvas.clientWidth;
+    vh = canvas.clientHeight;
+    canvas.width = Math.round(vw * dpr);
+    canvas.height = Math.round(vh * dpr);
+    schedule();
+  }
+
+  function fitScale(pad) {
+    return Math.min((vw - pad * 2) / W, (vh - pad * 2) / H);
+  }
+
+  function fit(animate) {
+    const pad = vw < 720 ? 20 : 48;
+    const k = clamp(fitScale(pad), MIN_K, MAX_K);
+    goTo(k, (vw - W * k) / 2, (vh - H * k) / 2, animate);
+  }
+
+  function actualSize() {
+    zoomAt(1, vw / 2, vh / 2, true);
+  }
+
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+  // Animated transitions for button-driven moves; instant for wheel/drag.
+  let anim = null;
+  function goTo(k, x, y, animate) {
+    if (!animate) { view.k = k; view.x = x; view.y = y; anim = null; schedule(); return; }
+    anim = { from: { ...view }, to: { k, x, y }, t0: performance.now(), dur: 280 };
+    step();
+  }
+  function step() {
+    if (!anim) return;
+    const p = Math.min(1, (performance.now() - anim.t0) / anim.dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    view.k = anim.from.k + (anim.to.k - anim.from.k) * e;
+    view.x = anim.from.x + (anim.to.x - anim.from.x) * e;
+    view.y = anim.from.y + (anim.to.y - anim.from.y) * e;
+    draw();
+    if (p < 1) requestAnimationFrame(step); else anim = null;
+  }
+
+  function zoomAt(k1, sx, sy, animate) {
+    k1 = clamp(k1, MIN_K, MAX_K);
+    const wx = (sx - view.x) / view.k;
+    const wy = (sy - view.y) / view.k;
+    goTo(k1, sx - wx * k1, sy - wy * k1, animate);
+  }
+
+  // Reported relative to the diagram's native 1480×1940 size, so the 1:1
+  // button and the readout agree.
+  function syncZoom() {
+    zoomLabel.textContent = Math.round(view.k * 100) + '%';
+    // The plate repeats the diagram's own title, so hide it whenever that
+    // title is actually on screen.
+    const titleOnScreen = worldVisible(160, 60, 620, 100);
+    plate.classList.toggle('hidden', titleOnScreen);
+    writeHash();
+  }
+
+  function worldVisible(x, y, w, h) {
+    const x0 = x * view.k + view.x, y0 = y * view.k + view.y;
+    return x0 > -8 && y0 > -8 && x0 + w * view.k < vw + 8 && y0 + h * view.k < vh + 8;
+  }
+
+  // ---- shareable view state: #k,x,y --------------------------------------
+  let hashTimer = 0;
+  function writeHash() {
+    clearTimeout(hashTimer);
+    hashTimer = setTimeout(() => {
+      const h = '#' + [view.k.toFixed(3), Math.round(view.x), Math.round(view.y)].join(',');
+      history.replaceState(null, '', h);
+    }, 220);
+  }
+
+  function readHash() {
+    const m = /^#([\d.]+),(-?\d+),(-?\d+)$/.exec(location.hash);
+    if (!m) return false;
+    const k = clamp(parseFloat(m[1]), MIN_K, MAX_K);
+    if (!isFinite(k)) return false;
+    view.k = k; view.x = +m[2]; view.y = +m[3];
+    return true;
+  }
+
+  // ==========================================================================
+  // DRAWING PRIMITIVES
+  // ==========================================================================
+
+  function font(st) {
+    const italic = st.italic ? 'italic ' : '';
+    return italic + st.weight + ' ' + st.size + "px 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+  }
+
+  function setText(st) {
+    ctx.font = font(st);
+    ctx.textBaseline = 'alphabetic';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (st.ls || 0) + 'px';
+    ctx.fillStyle = st.fill || C.mut;
+  }
+
+  function measure(st, t) {
+    ctx.font = font(st);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (st.ls || 0) + 'px';
+    return ctx.measureText(t).width;
+  }
+
+  // Draws one text item; supports right/center anchoring and rotation, both of
+  // which the source SVG uses for margin labels.
+  function text(item, styleOverride) {
+    // Precedence: base style < the item's own fill < caller override.
+    const st = Object.assign({}, S[item.s], item.fill ? { fill: item.fill } : null, styleOverride);
+
+    ctx.save();
+    if (item.alpha != null) ctx.globalAlpha *= item.alpha;
+
+    if (item.rot) {
+      ctx.translate(item.x, item.y);
+      ctx.rotate(item.rot * Math.PI / 180);
+      ctx.translate(-item.x, -item.y);
+    }
+
+    if (item.runs) {
+      // Multi-colour single line (the header strapline with per-run colours).
+      let x = item.x;
+      for (const r of item.runs) {
+        setText(Object.assign({}, st, { fill: r.fill }));
+        ctx.fillText(r.t, x, item.y);
+        x += measure(st, r.t);
+      }
+    } else {
+      setText(st);
+      let x = item.x;
+      if (item.anchor === 'center') x -= measure(st, item.t) / 2;
+      else if (item.anchor === 'right') x -= measure(st, item.t);
+      ctx.fillText(item.t, x, item.y);
+    }
+
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+    else {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x,     y + h, rr);
+      ctx.arcTo(x,     y + h, x,     y,     rr);
+      ctx.arcTo(x,     y,     x + w, y,     rr);
+      ctx.closePath();
+    }
+  }
+
+  // Polyline with softened elbows — the one deliberate departure from the SVG,
+  // which uses hard 90° corners. Reads better when the view is zoomed in.
+  function polyline(pts, radius) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [px, py] = pts[i - 1], [cx, cy] = pts[i], [nx, ny] = pts[i + 1];
+      const d1 = Math.hypot(cx - px, cy - py);
+      const d2 = Math.hypot(nx - cx, ny - cy);
+      const r = Math.min(radius, d1 / 2, d2 / 2);
+      ctx.lineTo(cx + (px - cx) / d1 * r, cy + (py - cy) / d1 * r);
+      ctx.quadraticCurveTo(cx, cy, cx + (nx - cx) / d2 * r, cy + (ny - cy) / d2 * r);
+    }
+    const last = pts[pts.length - 1];
+    ctx.lineTo(last[0], last[1]);
+    ctx.stroke();
+  }
+
+  // Matches the SVG marker: 7.5 marker units at stroke-width 1.4 ≈ 10.5 world px.
+  function arrowhead(from, to, color) {
+    const a = Math.atan2(to[1] - from[1], to[0] - from[0]);
+    const L = 9.5, Wd = 4.2;
+    ctx.save();
+    ctx.translate(to[0], to[1]);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-L, -Wd);
+    ctx.lineTo(-L,  Wd);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ==========================================================================
+  // FOCUS MODEL — what stays lit when a box is hovered or clicked
+  // ==========================================================================
+
+  function activeId() { return focused || hovered; }
+
+  function relatedSet(id) {
+    if (!id) return null;
+    const box = BOX_BY_ID.get(id);
+    const set = new Set([id]);
+    if (box) set.add(box.band);           // edges that terminate on the band
+    for (const e of EDGES) {
+      if (e.from === id || e.to === id) { set.add(e.from); set.add(e.to); }
+      else if (box && (e.from === box.band || e.to === box.band)) { set.add(e.from); set.add(e.to); }
+    }
+    return set;
+  }
+
+  // An edge is lit when it terminates on the active box, or on the band that
+  // box sits in — several arrows in the source SVG target a band, not a box.
+  function edgeLit(e) {
+    const id = activeId();
+    if (!id) return false;
+    const band = (BOX_BY_ID.get(id) || {}).band;
+    return e.from === id || e.to === id || e.from === band || e.to === band;
+  }
+
+  // ==========================================================================
+  // RENDER
+  // ==========================================================================
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, vw, vh);
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, vw, vh);
+
+    drawGrid();
+
+    ctx.save();
+    ctx.translate(view.x, view.y);
+    ctx.scale(view.k, view.k);
+    renderScene(activeId());
+    ctx.restore();
+
+    syncZoom();
+  }
+
+  // Dot grid in screen space — a canvas affordance that makes panning legible.
+  function drawGrid() {
+    const spacing = 32 * view.k;
+    if (spacing < 7) return;
+    const alpha = clamp((spacing - 7) / 18, 0, 1);
+    ctx.save();
+    ctx.fillStyle = 'rgba(148,163,184,' + (0.13 * alpha).toFixed(4) + ')';
+    const ox = view.x % spacing, oy = view.y % spacing;
+    const r = view.k > 1.4 ? 1.15 : 1;
+    for (let x = ox; x < vw + spacing; x += spacing) {
+      for (let y = oy; y < vh + spacing; y += spacing) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  function renderScene(active) {
+    const set = relatedSet(active);
+    const DIM = 0.16;
+
+    // ---- bands
+    for (const b of BANDS) {
+      const lit = !set || set.has(b.id) ||
+                  BOXES.some(x => x.band === b.id && set.has(x.id));
+      const base = lit ? 1 : DIM;
+      const hue = b.stroke || planeColor(b.plane);
+      ctx.save();
+      ctx.globalAlpha = base;
+
+      roundRect(b.x, b.y, b.w, b.h, 14);
+      ctx.fillStyle = C.bandFill;
+      ctx.fill();
+
+      ctx.globalAlpha = base * (b.alpha != null ? b.alpha : 1);
+      ctx.strokeStyle = hue;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash(b.dash ? [6, 5] : []);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = base;
+
+      if (b.hdr) text({ s: 'hdr', x: b.hdr.x, y: b.hdr.y, t: b.hdr.t, fill: b.hdr.fill || hue });
+      if (b.tagr) text({ s: 'tagr', x: b.tagr.x, y: b.tagr.y, t: b.tagr.t, fill: b.tagr.fill || hue, anchor: 'right', alpha: b.tagr.alpha });
+      ctx.restore();
+    }
+
+    // ---- free text & legend swatches
+    ctx.save();
+    ctx.globalAlpha = set ? 0.4 : 1;
+    for (const t of TEXTS) text(t);
+    for (const s of SWATCHES) {
+      ctx.save();
+      roundRect(s.x, s.y, s.w, s.h, 3);
+      if (s.fill) { ctx.fillStyle = s.fill; ctx.fill(); }
+      ctx.globalAlpha *= s.alpha;
+      ctx.strokeStyle = s.stroke;
+      ctx.lineWidth = 1.25;
+      ctx.setLineDash(s.dash ? [6, 5] : []);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const ch of CHIPS) {
+      ctx.save();
+      ctx.globalAlpha *= 0.85;
+      roundRect(ch.x, ch.y, ch.w, ch.h, 2.5);
+      ctx.fillStyle = ch.fill;
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // ---- edges (under the boxes, as in the SVG). Their labels are deferred
+    // to a pass after the boxes: several sit over a box edge, and the SVG
+    // paints them on top.
+    const deferredLabels = [];
+    for (const e of EDGES) {
+      const lit = !set || edgeLit(e);
+      // A lit edge takes the hue of whichever plane the focused box lives in.
+      const color = lit && set ? planeColor((BOX_BY_ID.get(active) || {}).plane) : C.line;
+      ctx.save();
+      ctx.globalAlpha = set ? (lit ? 1 : DIM * 0.7) : 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lit && set ? 1.9 : 1.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      polyline(e.pts, 9);
+      const n = e.pts.length;
+      arrowhead(e.pts[n - 2], e.pts[n - 1], color);
+      ctx.restore();
+      if (e.label) {
+        deferredLabels.push({ label: e.label,
+                              a: set ? (lit ? 1 : DIM * 0.7) : 1,
+                              override: lit && set ? { fill: color } : null });
+      }
+    }
+
+    // ---- boxes
+    for (const b of BOXES) {
+      const isActive = b.id === active;
+      const lit = !set || set.has(b.id);
+      const base = lit ? 1 : DIM;
+      const hue = planeColor(b.plane);
+      ctx.save();
+      ctx.globalAlpha = base;
+
+      if (isActive) {
+        ctx.shadowColor = hue;
+        ctx.shadowBlur = 24;
+      }
+      roundRect(b.x, b.y, b.w, b.h, b.r);
+      ctx.fillStyle = C.boxFill;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // A whisper of the plane hue in the fill, so a column reads as a family
+      // even before you look at the borders.
+      ctx.globalAlpha = base * (isActive ? 0.13 : 0.05);
+      ctx.fillStyle = hue;
+      ctx.fill();
+
+      // Solid (infra) boxes get the neutral border first, then a hue wash;
+      // dashed (owned) boxes are drawn straight in the plane hue.
+      ctx.lineWidth = isActive ? 1.9 : 1.25;
+      if (!b.dash && !isActive) {
+        ctx.globalAlpha = base;
+        ctx.strokeStyle = C.boxStroke;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = base * (isActive ? 1 : b.dash ? 0.6 : 0.42);
+      ctx.strokeStyle = hue;
+      ctx.setLineDash(b.dash && !isActive ? [6, 5] : []);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = base;
+
+      for (const [s, x, y, t] of b.texts) text({ s, x, y, t });
+      ctx.restore();
+    }
+
+    // ---- edge labels, on top of everything
+    for (const d of deferredLabels) {
+      ctx.save();
+      ctx.globalAlpha = d.a;
+      text(Object.assign({}, d.label), d.override);
+      ctx.restore();
+    }
+  }
+
+  // ==========================================================================
+  // HIT TESTING & INPUT
+  // ==========================================================================
+
+  function toWorld(sx, sy) {
+    return [(sx - view.x) / view.k, (sy - view.y) / view.k];
+  }
+
+  function hitTest(sx, sy) {
+    const [x, y] = toWorld(sx, sy);
+    // Reverse order so the topmost box wins, matching paint order.
+    for (let i = BOXES.length - 1; i >= 0; i--) {
+      const b = BOXES[i];
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b.id;
+    }
+    return null;
+  }
+
+  function showReadout(id) {
+    const b = BOX_BY_ID.get(id);
+    if (!b) { readout.classList.remove('on'); return; }
+    const plane = PLANES[b.plane] || { c: C.slate, label: b.plane };
+    readout.style.setProperty('--plane', plane.c);
+    readout.style.borderColor = plane.c + '55';
+    readout.querySelector('.p span').textContent = plane.label;
+    readout.querySelector('.t').textContent = b.name;
+    readout.querySelector('.d').innerHTML = '<em>' + escapeHtml(b.about) + '</em>';
+    readout.classList.add('on');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ---- pointer
+  let dragging = false, moved = false, lastX = 0, lastY = 0, downX = 0, downY = 0;
+  const pointers = new Map();
+  let pinchDist = 0, pinchK = 1;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinchDist = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      pinchK = view.k;
+      dragging = false;
+      return;
+    }
+    dragging = true; moved = false;
+    lastX = downX = e.clientX;
+    lastY = downY = e.clientY;
+    canvas.classList.add('panning');
+    hint.classList.add('faded');
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, [e.clientX, e.clientY]);
+
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (pinchDist > 0) {
+        const r = canvas.getBoundingClientRect();
+        zoomAt(pinchK * (d / pinchDist), (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top, false);
+      }
+      return;
+    }
+
+    if (dragging) {
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 4) moved = true;
+      view.x += dx; view.y += dy;
+      lastX = e.clientX; lastY = e.clientY;
+      anim = null;
+      schedule();
+      return;
+    }
+
+    const r = canvas.getBoundingClientRect();
+    const id = hitTest(e.clientX - r.left, e.clientY - r.top);
+    canvas.classList.toggle('pointing', !!id);
+    if (id !== hovered) {
+      hovered = id;
+      if (!focused) showReadout(id);
+      schedule();
+    }
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) { pinchDist = 0; }
+    if (!dragging) return;
+    dragging = false;
+    canvas.classList.remove('panning');
+    if (!moved) {
+      const r = canvas.getBoundingClientRect();
+      const id = hitTest(e.clientX - r.left, e.clientY - r.top);
+      focused = (id && id === focused) ? null : id;
+      showReadout(focused || hovered);
+      schedule();
+    }
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  canvas.addEventListener('pointerleave', () => {
+    if (hovered && !focused) { hovered = null; readout.classList.remove('on'); schedule(); }
+    else hovered = null;
+  });
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    anim = null;
+    if (e.ctrlKey || e.metaKey) {
+      zoomAt(view.k * Math.exp(-e.deltaY * 0.01), sx, sy, false);
+    } else if (e.shiftKey) {
+      view.x -= e.deltaY; schedule();
+    } else {
+      zoomAt(view.k * Math.exp(-e.deltaY * 0.0022), sx, sy, false);
+    }
+    hint.classList.add('faded');
+  }, { passive: false });
+
+  canvas.addEventListener('dblclick', (e) => {
+    const r = canvas.getBoundingClientRect();
+    zoomAt(view.k * 1.7, e.clientX - r.left, e.clientY - r.top, true);
+  });
+
+  // ---- keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey) return;
+    const pan = e.shiftKey ? 220 : 70;
+    switch (e.key) {
+      case '0': fit(true); break;
+      case '1': actualSize(); break;
+      case '+': case '=': zoomAt(view.k * 1.3, vw / 2, vh / 2, true); break;
+      case '-': case '_': zoomAt(view.k / 1.3, vw / 2, vh / 2, true); break;
+      case 'Escape':
+        focused = null; readout.classList.remove('on'); schedule(); break;
+      case 'ArrowLeft':  view.x += pan; schedule(); break;
+      case 'ArrowRight': view.x -= pan; schedule(); break;
+      case 'ArrowUp':    view.y += pan; schedule(); break;
+      case 'ArrowDown':  view.y -= pan; schedule(); break;
+      default: return;
+    }
+    e.preventDefault();
+    hint.classList.add('faded');
+  });
+
+  // ---- toolbar
+  document.getElementById('bIn').onclick  = () => zoomAt(view.k * 1.3, vw / 2, vh / 2, true);
+  document.getElementById('bOut').onclick = () => zoomAt(view.k / 1.3, vw / 2, vh / 2, true);
+  document.getElementById('bFit').onclick = () => fit(true);
+  document.getElementById('bOne').onclick = () => actualSize();
+  document.getElementById('bPng').onclick = exportPng;
+
+  // Renders the full diagram at 2× into an offscreen canvas, ignoring the
+  // current pan/zoom and any focus state.
+  function exportPng() {
+    const scale = 2;
+    const off = document.createElement('canvas');
+    off.width = W * scale;
+    off.height = H * scale;
+
+    const live = ctx;
+    ctx = off.getContext('2d');
+    try {
+      ctx.fillStyle = C.bg;
+      ctx.fillRect(0, 0, off.width, off.height);
+      ctx.scale(scale, scale);
+      renderScene(null);
+    } finally {
+      ctx = live;
+    }
+
+    off.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '{{SLUG}}@2x.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }, 'image/png');
+  }
+
+  // ==========================================================================
+  // BOOT
+  // ==========================================================================
+
+  window.addEventListener('resize', resize);
+  resize();
+  if (!readHash()) fit(false);
+  schedule();
+
+  // Canvas text is rasterised at draw time, so the first paint would use the
+  // fallback stack. Redraw once the webfont actually lands.
+  if (document.fonts) {
+    const faces = ["400 11px 'JetBrains Mono'", "600 13.5px 'JetBrains Mono'",
+                   "700 28px 'JetBrains Mono'", "italic 400 10.5px 'JetBrains Mono'"];
+    Promise.all(faces.map(f => document.fonts.load(f).catch(() => {})))
+      .then(() => schedule());
+    if (document.fonts.ready) document.fonts.ready.then(() => schedule());
+  }
+
+  setTimeout(() => hint.classList.add('faded'), 6000);
+})();
+</script>
+</body>
+</html>
