@@ -6,6 +6,9 @@ explorable canvas diagram**: dark, monospaced, organized into colour-coded
 planes, with pan/zoom, click-to-isolate focus, and PNG export. One
 self-contained HTML file, ready to share or publish.
 
+**▶ [Try the live demo](https://artifact.cafe/a/shoply-architecture-canvas-demo-enxjqx)** —
+pan around, zoom in, click any component to isolate it and read what it does.
+
 ![Shoply e-commerce platform rendered as an architecture canvas](docs/shoply.png)
 
 ## What you get
@@ -79,8 +82,10 @@ has no dependencies beyond a Google Fonts request for JetBrains Mono.
 
 ## Try it without Claude
 
-Open [`examples/shoply-canvas.html`](examples/shoply-canvas.html) in a
-browser — it's the canvas from the first screenshot, built from
+The [live demo](https://artifact.cafe/a/shoply-architecture-canvas-demo-enxjqx)
+is this repo's example, published as-is. Or open
+[`examples/shoply-canvas.html`](examples/shoply-canvas.html) in a browser
+locally — it's the canvas from the first screenshot, built from
 [`examples/shoply-scene.js`](examples/shoply-scene.js), which doubles as the
 canonical example of the scene format. To rebuild it yourself:
 
