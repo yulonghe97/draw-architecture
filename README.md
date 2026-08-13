@@ -21,7 +21,9 @@ Every diagram is a single `index.html` with a full viewer built in:
   light up its connections, and open a readout panel describing it.
 - **Shareable views** — the pan/zoom state lives in the URL hash, so you can
   link someone to an exact spot.
-- **PNG export** — one click renders the full diagram at 2× to a PNG.
+- **PNG export** — one click renders the full diagram at 2× to a PNG. Inside a
+  review iframe that blocks downloads, the same click opens the PNG in a new
+  tab instead.
 
 And a consistent visual language that makes every diagram read the same way:
 

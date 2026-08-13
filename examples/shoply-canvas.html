@@ -1037,7 +1037,21 @@
   document.getElementById('bOut').onclick = () => zoomAt(view.k / 1.3, vw / 2, vh / 2, true);
   document.getElementById('bFit').onclick = () => fit(true);
   document.getElementById('bOne').onclick = () => actualSize();
-  document.getElementById('bPng').onclick = exportPng;
+  const pngButton = document.getElementById('bPng');
+  pngButton.onclick = exportPng;
+
+  // Review hosts (artifact.cafe among them) embed the artifact in an iframe
+  // sandboxed without `allow-downloads`, which makes an <a download> click a
+  // silent no-op. Detect the frame and open the PNG in a new tab instead —
+  // `allow-popups-to-escape-sandbox` lets that through, and the viewer saves
+  // it from there. Opened standalone, the one-click download is unchanged.
+  let embedded = false;
+  try {
+    embedded = window.self !== window.top;
+  } catch (e) {
+    embedded = true;   // cross-origin parent — same sandbox story
+  }
+  if (embedded) pngButton.title = 'Open PNG @2× in a new tab';
 
   // Renders the full diagram at 2× into an offscreen canvas, ignoring the
   // current pan/zoom and any focus state.
@@ -1060,11 +1074,20 @@
 
     off.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'shoply-architecture@2x.png';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      // The new tab keeps reading from the blob URL after this handler ends,
+      // so hold it longer than the download path needs.
+      let ttl = 4000;
+      if (!embedded || !window.open(url, '_blank')) {
+        // Standalone, or the popup was blocked too: the anchor is still the
+        // best shot, and it costs nothing when it fails.
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'shoply-architecture@2x.png';
+        a.click();
+      } else {
+        ttl = 60000;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), ttl);
     }, 'image/png');
   }
 
