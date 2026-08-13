@@ -1,3 +1,5 @@
+
+
 # draw-architecture
 
 A Claude skill that turns **any system architecture** — a codebase, an
@@ -93,7 +95,7 @@ triggers on requests like:
 > - "Turn `docs/architecture.md` into an explorable diagram"
 > - "Map this codebase's architecture as a canvas I can pan around"
 
-Requirements: Node.js (for the build/validate scripts). The generated HTML
+Requirements: Node.js 18+ (for the build/validate scripts). The generated HTML
 has no dependencies beyond a Google Fonts request for JetBrains Mono.
 
 ## Try it without Claude
