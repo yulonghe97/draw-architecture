@@ -1,0 +1,42 @@
+{
+  "name": "draw-architecture",
+  "version": "0.1.0",
+  "description": "Installer for the architecture-canvas skill — turn any system architecture into an interactive, pannable/zoomable canvas diagram.",
+  "bin": {
+    "draw-architecture": "bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "SKILL.md",
+    "assets",
+    "scripts",
+    "references",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yulonghe97/draw-architecture.git"
+  },
+  "homepage": "https://github.com/yulonghe97/draw-architecture#readme",
+  "bugs": {
+    "url": "https://github.com/yulonghe97/draw-architecture/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agent-skill",
+    "skill",
+    "architecture",
+    "architecture-diagram",
+    "diagram",
+    "canvas",
+    "svg",
+    "visualization"
+  ]
+}

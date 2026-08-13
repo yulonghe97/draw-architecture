@@ -9,7 +9,7 @@ self-contained HTML file, ready to share or publish.
 **▶ [Try the live demo](https://artifact.cafe/a/shoply-architecture-canvas-demo-enxjqx)** —
 pan around, zoom in, click any component to isolate it and read what it does.
 
-![Shoply e-commerce platform rendered as an architecture canvas](docs/shoply.png)
+![Shoply e-commerce platform rendered as an architecture canvas](https://raw.githubusercontent.com/yulonghe97/draw-architecture/main/docs/shoply.png)
 
 ## What you get
 
@@ -33,11 +33,11 @@ And a consistent visual language that makes every diagram read the same way:
 - **One hue per plane** — colour says where a component belongs; long
   feedback loops travel the side gutters with rotated labels.
 
-![Meridian ML platform — closed retraining loop routed through the side gutter](docs/meridian.png)
+![Meridian ML platform — closed retraining loop routed through the side gutter](https://raw.githubusercontent.com/yulonghe97/draw-architecture/main/docs/meridian.png)
 
 Click any box to isolate it and see what it does:
 
-![Click-to-isolate focus mode with readout panel](docs/focus-mode.png)
+![Click-to-isolate focus mode with readout panel](https://raw.githubusercontent.com/yulonghe97/draw-architecture/main/docs/focus-mode.png)
 
 ## How it works
 
@@ -63,15 +63,29 @@ palette, or interaction design, only on content.
 
 ## Install
 
-Copy (or symlink) this repo into your Claude Code skills directory under the
-skill's name:
+```bash
+npx draw-architecture
+```
+
+It asks where to put the skill — your Claude Code skills directory
+(`~/.claude/skills`), a shared `~/.agents/skills` directory symlinked into
+Claude Code, the current project (`./.claude/skills`), or a path you name.
+Pass `--global`, `--agents`, `--project`, or `--dir <path>` to skip the
+question, and `npx draw-architecture uninstall` to remove it again.
+
+The npm package is `draw-architecture`; the skill it installs is
+`architecture-canvas` — that's the name Claude matches against, and the name
+of the directory on disk.
+
+Or install it by hand — the skill is just this repo's contents:
 
 ```bash
 git clone https://github.com/yulonghe97/draw-architecture.git
 ln -s "$(pwd)/draw-architecture" ~/.claude/skills/architecture-canvas
 ```
 
-Claude Code picks it up automatically. It triggers on requests like:
+Either way, Claude Code picks it up at the start of the next session. It
+triggers on requests like:
 
 > - "Create an interactive architecture canvas for our platform — here's how it works: …"
 > - "Turn `docs/architecture.md` into an explorable diagram"
@@ -127,6 +141,7 @@ folder with an `index.html`.
 
 ```
 SKILL.md                  the skill definition Claude follows
+bin/cli.js                the `npx draw-architecture` installer
 assets/template.html      the complete viewer (scene injected at build time)
 scripts/build.js          scene + template → index.html
 scripts/validate.js       layout linter for scenes
