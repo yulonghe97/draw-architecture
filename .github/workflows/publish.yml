@@ -1,0 +1,48 @@
+name: publish
+
+# Tag a release to publish it:
+#   npm version patch && git push --follow-tags
+#
+# Requires an npm automation token in the repository secret NPM_TOKEN.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # A tag that disagrees with package.json publishes the wrong version
+      # under the right name, which cannot be undone. Fail loudly instead.
+      # TAG comes in as an env var, never interpolated into the script.
+      - name: Check tag matches package.json
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          pkg="v$(node -p "require('./package.json').version")"
+          if [ "$pkg" != "$TAG" ]; then
+            echo "tag $TAG does not match package.json ($pkg)" >&2
+            exit 1
+          fi
+
+      # The package has no dependencies and nothing to build, so the only
+      # pre-flight check worth running is that the skill it ships is valid.
+      - name: Validate the example scene
+        run: node scripts/validate.js examples/shoply-scene.js
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
