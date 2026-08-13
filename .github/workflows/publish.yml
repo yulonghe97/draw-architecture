@@ -3,7 +3,9 @@ name: publish
 # Tag a release to publish it:
 #   npm version patch && git push --follow-tags
 #
-# Requires an npm automation token in the repository secret NPM_TOKEN.
+# Publishes over OIDC as a trusted publisher, so there is no token to leak or
+# rotate. npm matches the run against org/repo/workflow filename, which means
+# renaming this file breaks publishing until the trusted publisher is updated.
 on:
   push:
     tags:
@@ -11,18 +13,24 @@ on:
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+  id-token: write # mints the OIDC token npm authenticates with
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.1. Node 24 already bundles a new
+      # enough npm, but the bundled version moves with the runner image, so
+      # pin the floor here rather than inherit whatever ships that week.
+      - name: Upgrade npm
+        run: npm install -g npm@latest
 
       # A tag that disagrees with package.json publishes the wrong version
       # under the right name, which cannot be undone. Fail loudly instead.
@@ -42,7 +50,8 @@ jobs:
       - name: Validate the example scene
         run: node scripts/validate.js examples/shoply-scene.js
 
+      # No NODE_AUTH_TOKEN: the OIDC token stands in for it. Provenance is
+      # implied by a trusted-publisher run, but --provenance is kept so a
+      # publish that somehow falls back to token auth still gets attested.
       - name: Publish
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
