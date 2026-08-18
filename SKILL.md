@@ -2,21 +2,23 @@
 name: architecture-canvas
 description: >
   Turn any system architecture into an interactive, pannable/zoomable canvas
-  diagram (dark, JetBrains Mono, plane-coloured bands, click-to-isolate focus,
-  PNG export) — the "architecture canvas" style — and optionally publish it to
-  artifact.cafe for review. Use whenever the user asks for an architecture
-  diagram, system overview, "canvas" of a codebase or platform, a visual map of
-  services/layers/planes, or wants a diagram "in the
-  architecture-canvas style" — whether the input is a codebase to explore, an architecture doc, or
-  a verbal description. Prefer this over hand-writing SVG/HTML diagrams or
-  Mermaid when the result should be an explorable, publishable artifact.
+  diagram (dark by default with a light switcher, JetBrains Mono,
+  plane-coloured bands, click-to-isolate focus, PNG export) — the "architecture
+  canvas" style — and optionally publish it to artifact.cafe for review. Use
+  whenever the user asks for an architecture diagram, system overview, "canvas"
+  of a codebase or platform, a visual map of services/layers/planes, or wants a
+  diagram "in the architecture-canvas style" — whether the input is a codebase
+  to explore, an architecture doc, or a verbal description. Prefer this over
+  hand-writing SVG/HTML diagrams or Mermaid when the result should be an
+  explorable, publishable artifact.
 ---
 
 # Architecture Canvas
 
 Produce an interactive architecture diagram as a single self-contained
 `index.html`: a canvas viewer with pan/zoom/pinch, click-to-isolate focus with
-a readout panel, keyboard shortcuts, shareable view URLs, and 2× PNG export.
+a readout panel, keyboard shortcuts, shareable view URLs, a dark/light
+switcher, and 2× PNG export.
 You never write viewer code — you author a **scene** (pure data: planes,
 bands, boxes, edges, labels) and the bundled scripts assemble and check it.
 

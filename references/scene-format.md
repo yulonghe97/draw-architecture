@@ -11,6 +11,12 @@ The scene may reference two things the template provides:
   C.sky C.rose C.orange C.slate C.ink C.mut C.dim C.plane C.arrowLbl`)
 - `planeColor(id)` — returns the hex colour of a plane
 
+You author for the dark palette only. The viewer's light theme is a paint-time
+remap of these colours, so a scene needs no light variant — but stick to `C.*`
+and the recommended plane hues below and the remap is hand-tuned. A hue from
+outside that list still works: it falls back to a generic darkening, which is
+readable but less considered.
+
 Study `examples/shoply-scene.js` alongside this document — it is the canonical
 example of the style.
 
@@ -39,9 +45,10 @@ const PLANES = {
 };
 ```
 
-Recommended hues (all tuned for the dark background): slate `#94A3B8`, sky
-`#7DD3FC`, violet `#A78BFA`, cyan `#22D3EE`, green `#4ADE80`, rose `#FB7185`,
-orange `#F6821F`, amber `#FBBF24`. Push hues furthest apart where columns sit
+Recommended hues (tuned for the dark background, each with a hand-picked light
+counterpart): slate `#94A3B8`, sky `#7DD3FC`, violet `#A78BFA`, cyan `#22D3EE`,
+green `#4ADE80`, rose `#FB7185`, orange `#F6821F`, amber `#FBBF24`. Push hues
+furthest apart where columns sit
 **side by side** — adjacent hues in adjacent columns is the one combination
 that reads badly. 4–7 planes is the sweet spot.
 
