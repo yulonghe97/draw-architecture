@@ -6,9 +6,10 @@
 
 An [agent skill](https://agentskills.io) that turns **any system architecture** —
 a codebase, an architecture doc, or a plain-English description — into an
-**interactive, explorable canvas diagram**: dark, monospaced, organized into
-colour-coded planes, with pan/zoom, click-to-isolate focus, and PNG export. One
-self-contained HTML file, ready to share or publish.
+**interactive, explorable canvas diagram**: monospaced, organized into
+colour-coded planes, with pan/zoom, click-to-isolate focus, a dark/light
+switcher, and PNG export. One self-contained HTML file, ready to share or
+publish.
 
 **▶ [Try the live demo](https://artifact.cafe/a/shoply-architecture-canvas-demo-enxjqx)** —
 pan around, zoom in, click any component to isolate it and read what it does.
@@ -114,6 +115,9 @@ Every diagram is a single `index.html` with a full viewer built in:
   keyboard shortcuts (`0` fit, `1` actual size, `+`/`−`, arrows, `Esc`).
 - **Click-to-isolate** — click any component to dim everything unrelated,
   light up its connections, and open a readout panel describing it.
+- **Dark / light switcher** — a toolbar toggle (or `t`) flips the whole
+  diagram, chrome and canvas alike; the choice is remembered per viewer and
+  PNG export follows it. Diagrams open dark unless the reader says otherwise.
 - **Shareable views** — the pan/zoom state lives in the URL hash, so you can
   link someone to an exact spot.
 - **PNG export** — one click renders the full diagram at 2× to a PNG. Inside a
