@@ -1,9 +1,11 @@
 # Scene format & layout recipe
 
-The template (`assets/template.html`) contains the entire viewer — pan/zoom,
-pinch, keyboard, click-to-isolate focus, the readout panel, PNG export, and a
-shareable URL hash. You author only a **scene**: a JavaScript fragment defining
-nine constants. `scripts/build.js` splices it into the template.
+The template (`assets/template.html`) contains the entire viewer — drag or
+two-finger-scroll panning, pinch zoom, keyboard navigation, click-to-isolate
+focus, the readout panel, PNG export, and a shareable URL hash. Ordinary
+vertical scrolling pans; it never changes scale. You author only a **scene**:
+a JavaScript fragment defining nine constants. `scripts/build.js` splices it
+into the template.
 
 The scene may reference two things the template provides:
 

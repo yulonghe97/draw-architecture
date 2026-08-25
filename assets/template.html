@@ -157,7 +157,7 @@
 </div>
 
 <div id="hint">
-  <div><kbd>drag</kbd> pan &nbsp;·&nbsp; <kbd>scroll</kbd> zoom</div>
+  <div><kbd>drag / two-finger scroll</kbd> pan &nbsp;·&nbsp; <kbd>pinch</kbd> zoom</div>
   <div><kbd>click</kbd> isolate &nbsp;·&nbsp; <kbd>0</kbd> fit &nbsp;·&nbsp; <kbd>t</kbd> theme &nbsp;·&nbsp; <kbd>esc</kbd> clear</div>
 </div>
 
@@ -338,7 +338,7 @@
 
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-  // Animated transitions for button-driven moves; instant for wheel/drag.
+  // Animated transitions for button-driven moves; instant for wheel/pinch/drag.
   let anim = null;
   function goTo(k, x, y, animate) {
     if (!animate) { view.k = k; view.x = x; view.y = y; anim = null; schedule(); return; }
@@ -816,19 +816,59 @@
     else hovered = null;
   });
 
+  let gestureK = 1, gestureActive = false;
+
+  // macOS trackpad pinch is exposed by Chromium as a pixel-mode wheel event
+  // with ctrlKey=true. Ordinary two-finger scrolling has no modifier and must
+  // pan the canvas instead of changing scale. Line/page-mode Ctrl/Meta wheel is
+  // left to the browser so its own page zoom remains available.
   canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const r = canvas.getBoundingClientRect();
-    const sx = e.clientX - r.left, sy = e.clientY - r.top;
-    anim = null;
-    if (e.ctrlKey || e.metaKey) {
+    if (gestureActive) {
+      e.preventDefault();
+      return;
+    }
+    const trackpadPinch = e.ctrlKey && e.deltaMode === 0;
+    if (trackpadPinch) {
+      e.preventDefault();
+      const r = canvas.getBoundingClientRect();
+      const sx = e.clientX - r.left, sy = e.clientY - r.top;
+      anim = null;
       zoomAt(view.k * Math.exp(-e.deltaY * 0.01), sx, sy, false);
-    } else if (e.shiftKey) {
-      view.x -= e.deltaY; schedule();
+    } else if (e.ctrlKey || e.metaKey) {
+      return;
     } else {
-      zoomAt(view.k * Math.exp(-e.deltaY * 0.0022), sx, sy, false);
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? Math.max(vw, vh) : 1;
+      const rawX = e.deltaX * unit, rawY = e.deltaY * unit;
+      const shiftWheel = e.shiftKey && Math.abs(rawX) < 1;
+      view.x -= shiftWheel ? rawY : rawX;
+      view.y -= shiftWheel ? 0 : rawY;
+      anim = null;
+      schedule();
     }
     hint.classList.add('faded');
+  }, { passive: false });
+
+  // Safari exposes trackpad pinch through GestureEvent rather than the
+  // Chromium ctrl+wheel convention. Keep the initial scale stable for the
+  // gesture and zoom around its on-canvas centre.
+  canvas.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+    gestureActive = true;
+    gestureK = view.k;
+    anim = null;
+    hint.classList.add('faded');
+  }, { passive: false });
+  canvas.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const sx = typeof e.clientX === 'number' ? e.clientX - r.left : vw / 2;
+    const sy = typeof e.clientY === 'number' ? e.clientY - r.top : vh / 2;
+    zoomAt(gestureK * e.scale, sx, sy, false);
+  }, { passive: false });
+  canvas.addEventListener('gestureend', (e) => {
+    e.preventDefault();
+    gestureActive = false;
   }, { passive: false });
 
   canvas.addEventListener('dblclick', (e) => {
