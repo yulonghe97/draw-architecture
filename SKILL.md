@@ -16,9 +16,10 @@ description: >
 # Architecture Canvas
 
 Produce an interactive architecture diagram as a single self-contained
-`index.html`: a canvas viewer with pan/zoom/pinch, click-to-isolate focus with
-a readout panel, keyboard shortcuts, shareable view URLs, a dark/light
-switcher, and 2× PNG export.
+`index.html`: a canvas viewer where drag or two-finger scroll pans and pinch
+zooms, plus click-to-isolate focus with a readout panel, keyboard shortcuts,
+shareable view URLs, a dark/light switcher, and 2× PNG export. Ordinary
+vertical scrolling must never change the canvas scale.
 You never write viewer code — you author a **scene** (pure data: planes,
 bands, boxes, edges, labels) and the bundled scripts assemble and check it.
 

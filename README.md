@@ -111,7 +111,9 @@ want. It triggers on requests like:
 
 Every diagram is a single `index.html` with a full viewer built in:
 
-- **Pan / zoom / pinch** — drag to pan, scroll to zoom, cursor-anchored;
+- **Pan / zoom / pinch** — drag or two-finger scroll to pan; pinch to zoom,
+  cursor-anchored. Browser zoom remains available through its normal controls
+  and `Cmd/Ctrl +/-`;
   keyboard shortcuts (`0` fit, `1` actual size, `+`/`−`, arrows, `Esc`).
 - **Click-to-isolate** — click any component to dim everything unrelated,
   light up its connections, and open a readout panel describing it.

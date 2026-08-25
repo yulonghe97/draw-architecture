@@ -10,7 +10,7 @@
       "assertions": [
         "index.html exists at the requested path and is fully self-contained (no references to local files; only network assets like Google Fonts allowed)",
         "The inline JavaScript is syntactically valid (the page can execute without parse errors)",
-        "Interactive pan and zoom: the page wires pointer-drag panning and wheel/pinch zooming",
+        "Interactive pan and zoom: pointer drag and ordinary two-finger/wheel scrolling pan without changing scale; trackpad/touch pinch zooms",
         "Click-to-inspect: clicking (or hovering) a component reveals a name + description readout for that component",
         "Dark theme: page background is a dark color",
         "Layered-band composition: the diagram groups components into horizontal layer zones (bands/planes), not a free-form node graph",
@@ -29,7 +29,7 @@
       "assertions": [
         "index.html exists at the requested path and is fully self-contained (no references to local files; only network assets like Google Fonts allowed)",
         "The inline JavaScript is syntactically valid (the page can execute without parse errors)",
-        "Interactive pan and zoom: the page wires pointer-drag panning and wheel/pinch zooming",
+        "Interactive pan and zoom: pointer drag and ordinary two-finger/wheel scrolling pan without changing scale; trackpad/touch pinch zooms",
         "Click-to-inspect: clicking (or hovering) a component reveals a name + description readout for that component",
         "Dark theme: page background is a dark color",
         "Layered-band composition: the diagram groups components into horizontal layer zones (bands/planes), not a free-form node graph",
